@@ -17,7 +17,7 @@ import java.util.*;
 /**
  * <b><code>BatchInsertPlugin</code></b>
  * <p/>
- * Description:
+ * Description: 批量insert 和 insertSelective插件开发（Mybatis模式的时候）
  * <p/>
  * <b>Creation Time:</b> 2018/12/6 22:59.
  *
@@ -25,46 +25,63 @@ import java.util.*;
  */
 public class BatchInsertPlugin extends PluginAdapter {
 
-    private final static String METHOD_NAME = "batchInsert";
+    private final static String BATCH_INSERT = "batchInsert";
+
+    private final static String BATCH_INSERTSELECTIVE = "batchInsertSelective";
 
     public boolean validate(List<String> list) {
         return true;
     }
 
 
+    /**
+     * java代码Mapper生成
+     * @param interfaze
+     * @param topLevelClass
+     * @param introspectedTable
+     * @return
+     */
     @Override
     public boolean clientGenerated(Interface interfaze,
                                    TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
 
         if (introspectedTable.getTargetRuntime() == IntrospectedTable.TargetRuntime.MYBATIS3) {
-            addInsertMethod(interfaze, introspectedTable);
+            addBatchInsertMethod(interfaze, introspectedTable);
         }
 
         return super.clientGenerated(interfaze, topLevelClass,
                 introspectedTable);
     }
 
+    /**
+     * sqlMapper生成
+     * @param document
+     * @param introspectedTable
+     * @return
+     */
     @Override
     public boolean sqlMapDocumentGenerated(Document document,
                                            IntrospectedTable introspectedTable) {
-        if (introspectedTable.getTargetRuntime() == IntrospectedTable.TargetRuntime.MYBATIS3) {
-            addElements(document.getRootElement(), introspectedTable);
+        if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
+            addBatchInsertSqlMap(document.getRootElement(), introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
 
-    private void addElements(XmlElement parentElement, IntrospectedTable introspectedTable) {
+    /**
+     * batchInsert方法生成
+     * @param parentElement
+     * @param introspectedTable
+     */
+    private void addBatchInsertSqlMap(XmlElement parentElement, IntrospectedTable introspectedTable) {
         XmlElement answer = new XmlElement("insert");
 
-        answer.addAttribute(new Attribute(
-                "id", METHOD_NAME));
+        answer.addAttribute(new Attribute("id", BATCH_INSERT));
 
         FullyQualifiedJavaType parameterType;
-        parameterType = introspectedTable.getRules()
-                .calculateAllFieldsClass();
+        parameterType = introspectedTable.getRules().calculateAllFieldsClass();
 
-        answer.addAttribute(new Attribute("parameterType",
-                parameterType.getFullyQualifiedName()));
+        answer.addAttribute(new Attribute("parameterType", parameterType.getFullyQualifiedName()));
 
         context.getCommentGenerator().addComment(answer);
 
@@ -164,21 +181,20 @@ public class BatchInsertPlugin extends PluginAdapter {
     }
 
 
-    private void addInsertMethod(Interface interfaze, IntrospectedTable introspectedTable) {
+    private void addBatchInsertMethod(Interface interfaze, IntrospectedTable introspectedTable) {
         Set<FullyQualifiedJavaType> importedTypes = new TreeSet<FullyQualifiedJavaType>();
         Method method = new Method();
 
         method.setReturnType(new FullyQualifiedJavaType("void"));
         method.setVisibility(JavaVisibility.PUBLIC);
-        method.setName(METHOD_NAME);
+        method.setName(BATCH_INSERT);
 
-        FullyQualifiedJavaType parameterType;
-        parameterType = introspectedTable.getRules()
-                .calculateAllFieldsClass();
+        //获取实体类类型
+        FullyQualifiedJavaType parameterType = introspectedTable.getRules().calculateAllFieldsClass();
 
         importedTypes.add(parameterType);
 
-        FullyQualifiedJavaType listParamType = new FullyQualifiedJavaType("java.util.List<" + parameterType + ">");
+        FullyQualifiedJavaType listParamType = new FullyQualifiedJavaType("List<" + parameterType + ">");
 
         method.addParameter(new Parameter(listParamType, "recordLst"));
 
