@@ -1,6 +1,5 @@
-package com.hui.mybatis.plugins;
+package com.hui.mybatis.backup;
 
-import org.mybatis.generator.api.CommentGenerator;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.PluginAdapter;
@@ -45,10 +44,11 @@ public class BatchInsertPlugin extends PluginAdapter {
     @Override
     public boolean clientGenerated(Interface interfaze,
                                    TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+
         if (introspectedTable.getTargetRuntime() == IntrospectedTable.TargetRuntime.MYBATIS3) {
-            //生成batchInsert 和 batchInsertSelective的java方法
             addBatchInsertMethod(interfaze, introspectedTable);
         }
+
         return super.clientGenerated(interfaze, topLevelClass,
                 introspectedTable);
     }
@@ -63,19 +63,17 @@ public class BatchInsertPlugin extends PluginAdapter {
     public boolean sqlMapDocumentGenerated(Document document,
                                            IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            //生成batchInsert 和 batchInsertSelective的java方法
             addBatchInsertSqlMap(document.getRootElement(), introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
 
     /**
-     * batchInsert和batchInsertSelective方法生成
+     * batchInsert方法生成
      * @param parentElement
      * @param introspectedTable
      */
     private void addBatchInsertSqlMap(XmlElement parentElement, IntrospectedTable introspectedTable) {
-        //1.Batchinsert
         XmlElement answer = new XmlElement("insert");
 
         answer.addAttribute(new Attribute("id", BATCH_INSERT));
@@ -183,53 +181,27 @@ public class BatchInsertPlugin extends PluginAdapter {
     }
 
 
-    /**
-     * java的Mapper类生成
-     * @param interfaze
-     * @param introspectedTable
-     */
     private void addBatchInsertMethod(Interface interfaze, IntrospectedTable introspectedTable) {
+        Set<FullyQualifiedJavaType> importedTypes = new TreeSet<FullyQualifiedJavaType>();
+        Method method = new Method();
+
+        method.setReturnType(new FullyQualifiedJavaType("void"));
+        method.setVisibility(JavaVisibility.PUBLIC);
+        method.setName(BATCH_INSERT);
+
         //获取实体类类型
         FullyQualifiedJavaType parameterType = introspectedTable.getRules().calculateAllFieldsClass();
-        //Java List类型
-        FullyQualifiedJavaType listType = FullyQualifiedJavaType.getNewListInstance();
-        //@Param需要导入的类型
-        FullyQualifiedJavaType paramType = new FullyQualifiedJavaType("org.apache.ibatis.annotations.Param");
 
-        //导入
-        Set<FullyQualifiedJavaType> importedTypes = new TreeSet<FullyQualifiedJavaType>();
         importedTypes.add(parameterType);
-        importedTypes.add(listType);
-        importedTypes.add(paramType);
 
-        //List包住实体类
-        FullyQualifiedJavaType listParameterType = FullyQualifiedJavaType.getNewListInstance();
-        listParameterType.addTypeArgument(parameterType);
+        FullyQualifiedJavaType listParamType = new FullyQualifiedJavaType("List<" + parameterType + ">");
 
+        method.addParameter(new Parameter(listParamType, "recordLst"));
 
-        //1.batchInsert
-        Method insertMethod = new Method();
-        insertMethod.setReturnType(FullyQualifiedJavaType.getIntInstance());
-        insertMethod.setVisibility(JavaVisibility.PUBLIC);
-        insertMethod.setName(BATCH_INSERT);
-        insertMethod.addParameter(new Parameter(listParameterType, "recordList","@Param(\"recordList\")"));
-
-
-        //2.batchInsertSelective
-        Method insertSelectiveMethod = new Method();
-
-        insertSelectiveMethod.setReturnType(FullyQualifiedJavaType.getIntInstance());
-        insertSelectiveMethod.setVisibility(JavaVisibility.PUBLIC);
-        insertSelectiveMethod.setName(BATCH_INSERTSELECTIVE);
-        insertSelectiveMethod.addParameter(new Parameter(listParameterType,"recordList","@Param(\"recordList\")"));
-
-        CommentGenerator commentGenerator = context.getCommentGenerator();
-
-        commentGenerator.addGeneralMethodComment(insertMethod, introspectedTable);
-        commentGenerator.addGeneralMethodComment(insertSelectiveMethod, introspectedTable);
+        context.getCommentGenerator().addGeneralMethodComment(method,
+                introspectedTable);
 
         interfaze.addImportedTypes(importedTypes);
-        interfaze.addMethod(insertMethod);
-        interfaze.addMethod(insertSelectiveMethod);
+        interfaze.addMethod(method);
     }
 }
