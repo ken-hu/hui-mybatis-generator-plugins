@@ -37,6 +37,7 @@ public class MethodGeneratorTool {
         Method method = new Method();
         method.setName(methodName);
         method.setVisibility(visibility);
+        method.setReturnType(returnJavaType);
         for (Parameter parameter : parameters) {
             method.addParameter(parameter);
         }
