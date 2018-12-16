@@ -41,7 +41,7 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
 
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            addUpdateMethod(interfaze, introspectedTable);
+            addMethod(interfaze, introspectedTable);
         }
         return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
@@ -49,12 +49,12 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
     @Override
     public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            addUpdateSqlMapper(document, introspectedTable);
+            addSqlMapper(document, introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
 
-    public void addUpdateSqlMapper(Document document, IntrospectedTable introspectedTable) {
+    public void addSqlMapper(Document document, IntrospectedTable introspectedTable) {
         String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
         List<IntrospectedColumn> columnList = introspectedTable.getAllColumns();
 
@@ -113,7 +113,7 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
         document.getRootElement().addElement(updateXmlElement);
     }
 
-    public void addUpdateMethod(Interface interfaze, IntrospectedTable introspectedTable) {
+    public void addMethod(Interface interfaze, IntrospectedTable introspectedTable) {
         Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
 
         //List包住实体类

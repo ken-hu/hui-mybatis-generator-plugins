@@ -37,7 +37,7 @@ public class BatchDeletePlugin extends PluginAdapter {
     @Override
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            addBatchDeleteMethod(interfaze, introspectedTable);
+            addMethod(interfaze, introspectedTable);
         }
         return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
@@ -45,7 +45,7 @@ public class BatchDeletePlugin extends PluginAdapter {
     @Override
     public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)){
-            addBatchDeleteSqlMap(document.getRootElement(), introspectedTable);
+            addSqlMapper(document, introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
@@ -55,7 +55,7 @@ public class BatchDeletePlugin extends PluginAdapter {
      * @param interfaze
      * @param introspectedTable
      */
-    private void addBatchDeleteMethod(Interface interfaze ,IntrospectedTable introspectedTable){
+    private void addMethod(Interface interfaze ,IntrospectedTable introspectedTable){
         Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
 
         Method batchDeleteMethod = MethodGeneratorTool.methodGenerator(BATCH_DELETE,
@@ -71,10 +71,10 @@ public class BatchDeletePlugin extends PluginAdapter {
 
     /**
      * 批量删除的xml方法生成
-     * @param parentElement
+     * @param document
      * @param introspectedTable
      */
-    private void addBatchDeleteSqlMap(XmlElement parentElement, IntrospectedTable introspectedTable){
+    private void addSqlMapper(Document document, IntrospectedTable introspectedTable){
         String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
 
         String key = introspectedTable.getPrimaryKeyColumns().get(0).getActualColumnName();
@@ -95,6 +95,6 @@ public class BatchDeletePlugin extends PluginAdapter {
 
         deleteElement.addElement(new TextElement(")"));
 
-        parentElement.addElement(deleteElement);
+        document.getRootElement().addElement(deleteElement);
     }
 }

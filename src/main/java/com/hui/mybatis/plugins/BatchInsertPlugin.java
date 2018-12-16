@@ -26,18 +26,6 @@ import java.util.Set;
  */
 public class BatchInsertPlugin extends PluginAdapter {
 
-    /*
-    * demo:
-    *  <insert id="batchInsert" parameterType="com.hui.base.springboot.model.Order">
-    insert into t_hui_order (order_id,
-      order_name, product_id, buy_quantity
-      )
-    values <foreach collection="list" item="item" index="index" separator="," > (#{item.orderId,jdbcType=VARCHAR},
-      #{item.orderName,jdbcType=VARCHAR}, #{item.productId,jdbcType=VARCHAR}, #{item.buyQuantity,jdbcType=INTEGER}
-      )</foreach>
-    </insert>
-    *
-    */
     private final static String BATCH_INSERT = "batchInsert";
 
     private final static String PARAMETER_NAME = "recordList";
@@ -61,7 +49,7 @@ public class BatchInsertPlugin extends PluginAdapter {
                                    TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime() == IntrospectedTable.TargetRuntime.MYBATIS3) {
             //生成batchInsert 和 batchInsertSelective的java方法
-            addBatchInsertMethod(interfaze, introspectedTable);
+            addMethod(interfaze, introspectedTable);
         }
         return super.clientGenerated(interfaze, topLevelClass,
                 introspectedTable);
@@ -79,7 +67,7 @@ public class BatchInsertPlugin extends PluginAdapter {
                                            IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
             //生成batchInsert 和 batchInsertSelective的java方法
-            addBatchInsertSqlMap(document, introspectedTable);
+            addSqlMapper(document, introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
@@ -90,7 +78,7 @@ public class BatchInsertPlugin extends PluginAdapter {
      * @param document
      * @param introspectedTable
      */
-    private void addBatchInsertSqlMap(Document document, IntrospectedTable introspectedTable) {
+    private void addSqlMapper(Document document, IntrospectedTable introspectedTable) {
         String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
         List<IntrospectedColumn> columnList = introspectedTable.getAllColumns();
 
@@ -139,7 +127,7 @@ public class BatchInsertPlugin extends PluginAdapter {
      * @param interfaze
      * @param introspectedTable
      */
-    private void addBatchInsertMethod(Interface interfaze, IntrospectedTable introspectedTable) {
+    private void addMethod(Interface interfaze, IntrospectedTable introspectedTable) {
         //获取基本需要导入的类型
         Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
 
