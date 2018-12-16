@@ -1,10 +1,9 @@
 package com.hui.mybatis.tools;
 
+import org.mybatis.generator.api.CommentGenerator;
 import org.mybatis.generator.api.IntrospectedTable;
-import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
-import org.mybatis.generator.api.dom.java.JavaVisibility;
-import org.mybatis.generator.api.dom.java.Method;
-import org.mybatis.generator.api.dom.java.Parameter;
+import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.config.Context;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -20,6 +19,17 @@ import java.util.TreeSet;
  */
 public class MethodGeneratorTool {
 
+    private final static String BATCH_INSERT = "batchInsert";
+
+    private final static String PARAMETER_NAME = "recordList";
+
+    private final static String BATCH_UPDATE = "batchUpdate";
+
+    private final static String BATCH_DELETE = "batchDelete";
+
+    public final static Integer INSERT = 0;
+
+    public final static Integer UPDATE = 1;
     /**
      * java方法生成构造器.
      *
@@ -70,5 +80,59 @@ public class MethodGeneratorTool {
         return importedTypes;
     }
 
+    /**
+     * 默认的批量新增/更新方法构造器.
+     *
+     * @param interfaze         the interfaze
+     * @param introspectedTable the introspected table
+     * @param context           the context
+     * @author HuWeihui
+     * @since hui_project v1
+     */
+    public static void defaultBatchInsertOrUpdateMethodGen(Integer type ,Interface interfaze,IntrospectedTable introspectedTable, Context context){
+        Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
+
+        //List<Entity>
+        FullyQualifiedJavaType listParameterType = FullyQualifiedJavaType.getNewListInstance();
+        listParameterType.addTypeArgument(introspectedTable.getRules().calculateAllFieldsClass());
+
+        String methodName = BATCH_INSERT;
+        //1.batchInsert
+        if (type.equals(UPDATE)){
+            methodName = BATCH_UPDATE;
+        }
+        Method insertMethod = MethodGeneratorTool.methodGenerator(methodName,
+                JavaVisibility.DEFAULT,
+                FullyQualifiedJavaType.getIntInstance(),
+                new Parameter(listParameterType, PARAMETER_NAME, "@Param(\"" + PARAMETER_NAME + "\")"));
+
+        CommentGenerator commentGenerator = context.getCommentGenerator();
+        commentGenerator.addGeneralMethodComment(insertMethod, introspectedTable);
+
+        interfaze.addImportedTypes(importedTypes);
+        interfaze.addMethod(insertMethod);
+    }
+
+    /**
+     * 默认的批量删除方法构造器.
+     *
+     * @param interfaze         the interfaze
+     * @param introspectedTable the introspected table
+     * @param context           the context
+     * @author HuWeihui
+     * @since hui_project v1
+     */
+    public static void defaultBatchDeleteMethodGen(Interface interfaze,IntrospectedTable introspectedTable, Context context){
+        Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
+
+        Method batchDeleteMethod = MethodGeneratorTool.methodGenerator(BATCH_DELETE,
+                JavaVisibility.DEFAULT,
+                FullyQualifiedJavaType.getIntInstance(),
+                new Parameter(new FullyQualifiedJavaType("Integer[]"), PARAMETER_NAME, "@Param(\""+PARAMETER_NAME+"\")"));
+
+        context.getCommentGenerator().addGeneralMethodComment(batchDeleteMethod,introspectedTable);
+        interfaze.addImportedTypes(importedTypes);
+        interfaze.addMethod(batchDeleteMethod);
+    }
 
 }

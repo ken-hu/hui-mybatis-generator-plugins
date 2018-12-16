@@ -2,18 +2,18 @@ package com.hui.mybatis.plugins;
 
 import com.hui.mybatis.tools.MethodGeneratorTool;
 import com.hui.mybatis.tools.SqlMapperGeneratorTool;
-import org.mybatis.generator.api.CommentGenerator;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.PluginAdapter;
-import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
+import org.mybatis.generator.api.dom.java.Interface;
+import org.mybatis.generator.api.dom.java.TopLevelClass;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.TextElement;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * <b><code>OracleBatchInsertPlugin</code></b>
@@ -39,8 +39,7 @@ public class OracleBatchInsertPlugin extends PluginAdapter {
     @Override
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime() == IntrospectedTable.TargetRuntime.MYBATIS3) {
-            //生成batchInsert 和 batchInsertSelective的java方法
-            addMethod(interfaze, introspectedTable);
+            MethodGeneratorTool.defaultBatchInsertOrUpdateMethodGen(MethodGeneratorTool.INSERT, interfaze, introspectedTable, context);
         }
         return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
@@ -48,74 +47,59 @@ public class OracleBatchInsertPlugin extends PluginAdapter {
     @Override
     public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            //生成batchInsert 和 batchInsertSelective的java方法
             addSqlMapper(document, introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
 
 
-    private  void addSqlMapper(Document document, IntrospectedTable introspectedTable){
-        String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
-        List<IntrospectedColumn> columnList = introspectedTable.getAllColumns();
-
+    private void addSqlMapper(Document document, IntrospectedTable introspectedTable) {
         //1.Batchinsert
-        XmlElement insertElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.INSERT,
-                BATCH_INSERT, FullyQualifiedJavaType.getNewListInstance());
+        XmlElement baseElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.INSERT,
+                BATCH_INSERT,
+                FullyQualifiedJavaType.getNewListInstance());
 
-        XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME, "item", "index", "union all");
+        XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME,
+                "item",
+                "index",
+                "union all");
 
         foreachElement.addElement(new TextElement("select"));
 
-        StringBuilder columnInfo = new StringBuilder();
-        StringBuilder valuesInfo = new StringBuilder();
+        //tableName
+        baseElement.addElement(new TextElement(String.format("insert into %s (", introspectedTable.getFullyQualifiedTableNameAtRuntime())));
 
-        for (int i = 0; i < columnList.size(); i++) {
+        foreachElement.addElement(new TextElement("("));
 
-            IntrospectedColumn introspectedColumn = columnList.get(i);
+        for (int i = 0; i < introspectedTable.getAllColumns().size(); i++) {
+            //column信息
+            IntrospectedColumn introspectedColumn = introspectedTable.getAllColumns().get(i);
+
+            String columnInfo = "";
+            String valueInfo = "";
+
             if (introspectedColumn.isIdentity()) {
                 continue;
             }
-            columnInfo.append(introspectedColumn.getActualColumnName());
-            valuesInfo.append(MyBatis3FormattingUtilities.getParameterClause(introspectedColumn, "item."));
-            if (i != (columnList.size() - 1)) {
-                columnInfo.append(",");
-                valuesInfo.append(",");
+            columnInfo = introspectedColumn.getActualColumnName();
+            valueInfo = MyBatis3FormattingUtilities.getParameterClause(introspectedColumn, "item.");
+
+            if (i != (introspectedTable.getAllColumns().size() - 1)) {
+                columnInfo += (",");
+                valueInfo += ",";
             }
-            foreachElement.addElement(new TextElement(valuesInfo.toString()));
-            valuesInfo.delete(0, valuesInfo.length());
+            baseElement.addElement(new TextElement(columnInfo));
+            foreachElement.addElement(new TextElement(valueInfo));
         }
         foreachElement.addElement(new TextElement("from dual"));
 
-        String baseSql = String.format("insert into %s (%s)  ", tableName, columnInfo);
+        baseElement.addElement(new TextElement(")"));
+        baseElement.addElement(new TextElement("values"));
 
-        insertElement.addElement(new TextElement(baseSql));
-
-        insertElement.addElement(foreachElement);
-
+        baseElement.addElement(foreachElement);
 
         //3.parent Add
-        document.getRootElement().addElement(insertElement);
+        document.getRootElement().addElement(baseElement);
     }
 
-    private void addMethod(Interface interfaze, IntrospectedTable introspectedTable){
-        //获取基本需要导入的类型
-        Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
-
-        //List<Entity>
-        FullyQualifiedJavaType listParameterType = FullyQualifiedJavaType.getNewListInstance();
-        listParameterType.addTypeArgument(introspectedTable.getRules().calculateAllFieldsClass());
-
-        //1.batchInsert
-        Method insertMethod = MethodGeneratorTool.methodGenerator(BATCH_INSERT,
-                JavaVisibility.PUBLIC,
-                FullyQualifiedJavaType.getIntInstance(),
-                new Parameter(listParameterType, PARAMETER_NAME, "@Param(\"" + PARAMETER_NAME + "\")"));
-
-        CommentGenerator commentGenerator = context.getCommentGenerator();
-        commentGenerator.addGeneralMethodComment(insertMethod, introspectedTable);
-
-        interfaze.addImportedTypes(importedTypes);
-        interfaze.addMethod(insertMethod);
-    }
 }

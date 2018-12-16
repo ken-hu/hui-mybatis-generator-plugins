@@ -2,18 +2,18 @@ package com.hui.mybatis.plugins;
 
 import com.hui.mybatis.tools.MethodGeneratorTool;
 import com.hui.mybatis.tools.SqlMapperGeneratorTool;
-import org.mybatis.generator.api.CommentGenerator;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.PluginAdapter;
-import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
+import org.mybatis.generator.api.dom.java.Interface;
+import org.mybatis.generator.api.dom.java.TopLevelClass;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.TextElement;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * <b><code>MysqlBatchUpdatePlugin</code></b>
@@ -36,12 +36,11 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
         return true;
     }
 
-
     @Override
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
 
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            addMethod(interfaze, introspectedTable);
+            MethodGeneratorTool.defaultBatchInsertOrUpdateMethodGen(MethodGeneratorTool.UPDATE, interfaze, introspectedTable, context);
         }
         return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
@@ -57,24 +56,20 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
     public void addSqlMapper(Document document, IntrospectedTable introspectedTable) {
         String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
         List<IntrospectedColumn> columnList = introspectedTable.getAllColumns();
+        //primaryKey的JDBC名字
+        String primaryKeyName = introspectedTable.getPrimaryKeyColumns().get(0).getActualColumnName();
+        //primaryKey的JAVA名字
+        String primaryKeyJavaName = introspectedTable.getPrimaryKeyColumns().get(0).getJavaProperty();
 
         XmlElement updateXmlElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.UPDATE,
                 BATCH_UPDATE,
                 FullyQualifiedJavaType.getNewListInstance());
 
-
-        String sql = String.format("update %s ", tableName);
-
-        updateXmlElement.addElement(new TextElement(sql));
+        updateXmlElement.addElement(new TextElement(String.format("update %s ", tableName)));
 
         XmlElement trimElement = SqlMapperGeneratorTool.baseTrimElement("set", null, ",");
 
-        String key = "id";
-
-        String keyJava = "id";
-
         for (int i = 0; i < columnList.size(); i++) {
-            String valuesInfo = "";
 
             IntrospectedColumn introspectedColumn = columnList.get(i);
 
@@ -86,15 +81,13 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
 
 
             if (introspectedColumn.isIdentity()) {
-                key = columnName;
-                keyJava = parameterClause;
                 continue;
             }
 
-            String ifSql = String.format("when %s then %s", keyJava, parameterClause);
+            String ifSql = String.format("when %s then %s", primaryKeyJavaName, parameterClause);
             XmlElement ifElement = SqlMapperGeneratorTool.baseIfJudgeElementGen(columnJavaTypeName, ifSql, false);
 
-            String ifNullSql = String.format("when %s then %s", keyJava, tableName + "." + columnName);
+            String ifNullSql = String.format("when %s then %s", primaryKeyJavaName, tableName + "." + columnName);
             XmlElement ifNullElement = SqlMapperGeneratorTool.baseIfJudgeElementGen(columnJavaTypeName, ifNullSql, true);
 
 
@@ -102,7 +95,7 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
             foreachElement.addElement(ifElement);
             foreachElement.addElement(ifNullElement);
 
-            XmlElement caseTrimElement = SqlMapperGeneratorTool.baseTrimElement(columnName + " =case " + key, "end,", null);
+            XmlElement caseTrimElement = SqlMapperGeneratorTool.baseTrimElement(columnName + " =case " + primaryKeyName, "end,", null);
             caseTrimElement.addElement(foreachElement);
 
             trimElement.addElement(caseTrimElement);
@@ -110,26 +103,20 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
 
         updateXmlElement.addElement(trimElement);
 
+        XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME,
+                "item",
+                "index",
+                ",");
+        foreachElement.addElement(new TextElement(primaryKeyJavaName));
+
+        updateXmlElement.addElement(new TextElement( String.format("where %s in(", primaryKeyName)));
+
+        updateXmlElement.addElement(foreachElement);
+
+        updateXmlElement.addElement(new TextElement(")"));
+
         document.getRootElement().addElement(updateXmlElement);
     }
 
-    public void addMethod(Interface interfaze, IntrospectedTable introspectedTable) {
-        Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
-
-        //List包住实体类
-        FullyQualifiedJavaType listParameterType = FullyQualifiedJavaType.getNewListInstance();
-        listParameterType.addTypeArgument(introspectedTable.getRules().calculateAllFieldsClass());
-
-        Method updateMethod = MethodGeneratorTool.methodGenerator(BATCH_UPDATE,
-                JavaVisibility.PUBLIC,
-                FullyQualifiedJavaType.getIntInstance(),
-                new Parameter(listParameterType, PARAMETER_NAME, "@Param(\"" + PARAMETER_NAME + "\")"));
-
-        CommentGenerator commentGenerator = context.getCommentGenerator();
-        commentGenerator.addGeneralMethodComment(updateMethod, introspectedTable);
-
-        interfaze.addImportedTypes(importedTypes);
-        interfaze.addMethod(updateMethod);
-    }
 
 }

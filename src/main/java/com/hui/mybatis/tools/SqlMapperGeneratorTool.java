@@ -88,6 +88,7 @@ public class SqlMapperGeneratorTool {
         return foreachElement;
     }
 
+
     /**
      * 基础IF Element构造器.
      *

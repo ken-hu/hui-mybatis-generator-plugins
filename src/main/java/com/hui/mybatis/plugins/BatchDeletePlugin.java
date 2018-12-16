@@ -1,17 +1,19 @@
 package com.hui.mybatis.plugins;
 
+import com.hui.mybatis.tools.BaseGenTool;
 import com.hui.mybatis.tools.MethodGeneratorTool;
 import com.hui.mybatis.tools.SqlMapperGeneratorTool;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.PluginAdapter;
-import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
+import org.mybatis.generator.api.dom.java.Interface;
+import org.mybatis.generator.api.dom.java.TopLevelClass;
 import org.mybatis.generator.api.dom.xml.Attribute;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.TextElement;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * <b><code>BatchDeletePlugin</code></b>
@@ -36,8 +38,8 @@ public class BatchDeletePlugin extends PluginAdapter {
 
     @Override
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
-        if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            addMethod(interfaze, introspectedTable);
+        if (BaseGenTool.isMybatisMode(introspectedTable)) {
+            MethodGeneratorTool.defaultBatchDeleteMethodGen(interfaze,introspectedTable,context);
         }
         return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
@@ -48,24 +50,6 @@ public class BatchDeletePlugin extends PluginAdapter {
             addSqlMapper(document, introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
-    }
-
-    /**
-     * 批量删除java方法生成
-     * @param interfaze
-     * @param introspectedTable
-     */
-    private void addMethod(Interface interfaze ,IntrospectedTable introspectedTable){
-        Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
-
-        Method batchDeleteMethod = MethodGeneratorTool.methodGenerator(BATCH_DELETE,
-                JavaVisibility.PUBLIC,
-                FullyQualifiedJavaType.getIntInstance(),
-                new Parameter(new FullyQualifiedJavaType("Integer[]"), PARAMETER_NAME, "@Param(\""+PARAMETER_NAME+"\")"));
-
-        context.getCommentGenerator().addGeneralMethodComment(batchDeleteMethod,introspectedTable);
-        interfaze.addImportedTypes(importedTypes);
-        interfaze.addMethod(batchDeleteMethod);
     }
 
 

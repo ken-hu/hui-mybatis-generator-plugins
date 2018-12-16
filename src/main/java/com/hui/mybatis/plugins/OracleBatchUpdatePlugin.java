@@ -2,18 +2,18 @@ package com.hui.mybatis.plugins;
 
 import com.hui.mybatis.tools.MethodGeneratorTool;
 import com.hui.mybatis.tools.SqlMapperGeneratorTool;
-import org.mybatis.generator.api.CommentGenerator;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.PluginAdapter;
-import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
+import org.mybatis.generator.api.dom.java.Interface;
+import org.mybatis.generator.api.dom.java.TopLevelClass;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.TextElement;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * <b><code>OracleBatchUpdatePlugin</code></b>
@@ -38,7 +38,7 @@ public class OracleBatchUpdatePlugin extends PluginAdapter {
     @Override
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
-            addMethod(interfaze, introspectedTable);
+            MethodGeneratorTool.defaultBatchInsertOrUpdateMethodGen(MethodGeneratorTool.UPDATE,interfaze,introspectedTable,context);
         }
         return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
@@ -51,51 +51,35 @@ public class OracleBatchUpdatePlugin extends PluginAdapter {
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
 
-    public void addMethod(Interface interfaze, IntrospectedTable introspectedTable) {
-        Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
-
-        //List包住实体类
-        FullyQualifiedJavaType listParameterType = FullyQualifiedJavaType.getNewListInstance();
-        listParameterType.addTypeArgument(introspectedTable.getRules().calculateAllFieldsClass());
-
-        Method updateMethod = MethodGeneratorTool.methodGenerator(BATCH_UPDATE,
-                JavaVisibility.PUBLIC,
-                FullyQualifiedJavaType.getIntInstance(),
-                new Parameter(listParameterType, PARAMETER_NAME, "@Param(\"" + PARAMETER_NAME + "\")"));
-
-        CommentGenerator commentGenerator = context.getCommentGenerator();
-        commentGenerator.addGeneralMethodComment(updateMethod, introspectedTable);
-
-        interfaze.addImportedTypes(importedTypes);
-        interfaze.addMethod(updateMethod);
-    }
 
     public void addSqlMapper(Document document, IntrospectedTable introspectedTable) {
         String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
         List<IntrospectedColumn> columnList = introspectedTable.getAllColumns();
+        //primaryKey的JDBC名字
+        String primaryKeyName = introspectedTable.getPrimaryKeyColumns().get(0).getActualColumnName();
+        //primaryKey的JAVA名字
+        String primaryKeyJavaName = introspectedTable.getPrimaryKeyColumns().get(0).getJavaProperty();
 
-        XmlElement updateElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.UPDATE,
-                BATCH_UPDATE, FullyQualifiedJavaType.getNewListInstance());
+        XmlElement baseElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.UPDATE,
+                BATCH_UPDATE,
+                FullyQualifiedJavaType.getNewListInstance());
 
-        XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME, "item", "index", ";");
-        String baseSql = String.format("update %s", tableName);
+        XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME,
+                "item",
+                "index",
+                ";");
 
-        foreachElement.addElement(new TextElement(baseSql));
+        foreachElement.addElement(new TextElement( String.format("update %s", tableName)));
 
         XmlElement setElement = new XmlElement("set");
-
 
         StringBuilder columnInfo = new StringBuilder();
         StringBuilder valuesInfo = new StringBuilder();
 
-        String key = "id";
-        String keyJava = "id";
         for (int i = 0; i < columnList.size(); i++) {
 
             IntrospectedColumn introspectedColumn = columnList.get(i);
             if (introspectedColumn.isIdentity()) {
-                key = introspectedColumn.getActualColumnName();
-                keyJava = MyBatis3FormattingUtilities.getParameterClause(introspectedColumn, "item.");
                 continue;
             }
             columnInfo.append(introspectedColumn.getActualColumnName());
@@ -114,17 +98,17 @@ public class OracleBatchUpdatePlugin extends PluginAdapter {
 
         foreachElement.addElement(setElement);
 
-        String whereSql = String.format("where %s = %s",key,keyJava);
+        String whereSql = String.format("where %s = %s",primaryKeyName,primaryKeyJavaName);
 
         foreachElement.addElement(new TextElement(whereSql));
 
-        updateElement.addElement(new TextElement("begin"));
+        baseElement.addElement(new TextElement("begin"));
 
-        updateElement.addElement(foreachElement);
+        baseElement.addElement(foreachElement);
 
-        updateElement.addElement(new TextElement(";end;"));
+        baseElement.addElement(new TextElement(";end;"));
 
         //3.parent Add
-        document.getRootElement().addElement(updateElement);
+        document.getRootElement().addElement(baseElement);
     }
 }
