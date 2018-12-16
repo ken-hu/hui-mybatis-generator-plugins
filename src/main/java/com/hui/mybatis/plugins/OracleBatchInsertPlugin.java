@@ -16,28 +16,16 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * <b><code>BatchInsertPlugin</code></b>
+ * <b><code>OracleBatchInsertPlugin</code></b>
  * <p/>
- * Description: 批量insert 和 insertSelective插件开发（Mybatis模式的时候）
+ * Description:
  * <p/>
- * <b>Creation Time:</b> 2018/12/6 22:59.
+ * <b>Creation Time:</b> 2018/12/15 1:12.
  *
  * @author HuWeihui
  */
-public class BatchInsertPlugin extends PluginAdapter {
+public class OracleBatchInsertPlugin extends PluginAdapter {
 
-    /*
-    * demo:
-    *  <insert id="batchInsert" parameterType="com.hui.base.springboot.model.Order">
-    insert into t_hui_order (order_id,
-      order_name, product_id, buy_quantity
-      )
-    values <foreach collection="list" item="item" index="index" separator="," > (#{item.orderId,jdbcType=VARCHAR},
-      #{item.orderName,jdbcType=VARCHAR}, #{item.productId,jdbcType=VARCHAR}, #{item.buyQuantity,jdbcType=INTEGER}
-      )</foreach>
-    </insert>
-    *
-    */
     private final static String BATCH_INSERT = "batchInsert";
 
     private final static String PARAMETER_NAME = "recordList";
@@ -48,49 +36,26 @@ public class BatchInsertPlugin extends PluginAdapter {
     }
 
 
-    /**
-     * java代码Mapper生成
-     *
-     * @param interfaze
-     * @param topLevelClass
-     * @param introspectedTable
-     * @return
-     */
     @Override
-    public boolean clientGenerated(Interface interfaze,
-                                   TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+    public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime() == IntrospectedTable.TargetRuntime.MYBATIS3) {
             //生成batchInsert 和 batchInsertSelective的java方法
-            addBatchInsertMethod(interfaze, introspectedTable);
+            addMethod(interfaze, introspectedTable);
         }
-        return super.clientGenerated(interfaze, topLevelClass,
-                introspectedTable);
+        return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
 
-    /**
-     * sqlMapper生成
-     *
-     * @param document
-     * @param introspectedTable
-     * @return
-     */
     @Override
-    public boolean sqlMapDocumentGenerated(Document document,
-                                           IntrospectedTable introspectedTable) {
+    public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime().equals(IntrospectedTable.TargetRuntime.MYBATIS3)) {
             //生成batchInsert 和 batchInsertSelective的java方法
-            addBatchInsertSqlMap(document, introspectedTable);
+            addSqlMapper(document, introspectedTable);
         }
         return super.sqlMapDocumentGenerated(document, introspectedTable);
     }
 
-    /**
-     * batchInsert和batchInsertSelective的SQL生成
-     *
-     * @param document
-     * @param introspectedTable
-     */
-    private void addBatchInsertSqlMap(Document document, IntrospectedTable introspectedTable) {
+
+    private  void addSqlMapper(Document document, IntrospectedTable introspectedTable){
         String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
         List<IntrospectedColumn> columnList = introspectedTable.getAllColumns();
 
@@ -98,9 +63,9 @@ public class BatchInsertPlugin extends PluginAdapter {
         XmlElement insertElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.INSERT,
                 BATCH_INSERT, FullyQualifiedJavaType.getNewListInstance());
 
-        XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME, "item", "index", ",");
+        XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME, "item", "index", "union all");
 
-        foreachElement.addElement(new TextElement("("));
+        foreachElement.addElement(new TextElement("select"));
 
         StringBuilder columnInfo = new StringBuilder();
         StringBuilder valuesInfo = new StringBuilder();
@@ -120,9 +85,9 @@ public class BatchInsertPlugin extends PluginAdapter {
             foreachElement.addElement(new TextElement(valuesInfo.toString()));
             valuesInfo.delete(0, valuesInfo.length());
         }
-        foreachElement.addElement(new TextElement(")"));
+        foreachElement.addElement(new TextElement("from dual"));
 
-        String baseSql = String.format("insert into %s (%s) values ", tableName, columnInfo);
+        String baseSql = String.format("insert into %s (%s)  ", tableName, columnInfo);
 
         insertElement.addElement(new TextElement(baseSql));
 
@@ -133,13 +98,7 @@ public class BatchInsertPlugin extends PluginAdapter {
         document.getRootElement().addElement(insertElement);
     }
 
-    /**
-     * java的Mapper类生成
-     *
-     * @param interfaze
-     * @param introspectedTable
-     */
-    private void addBatchInsertMethod(Interface interfaze, IntrospectedTable introspectedTable) {
+    private void addMethod(Interface interfaze, IntrospectedTable introspectedTable){
         //获取基本需要导入的类型
         Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
 

@@ -74,6 +74,16 @@ public class BatchInsertPlugin extends PluginAdapter {
      * @param introspectedTable
      */
     private void addBatchInsertSqlMap(XmlElement parentElement, IntrospectedTable introspectedTable) {
+        /*
+        <insert id="batchInsert" parameterType="com.hui.base.springboot.model.Order">
+    insert into t_hui_order (order_id,
+      order_name, product_id, buy_quantity
+      )
+    values <foreach collection="list" item="item" index="index" separator="," > (#{item.orderId,jdbcType=VARCHAR},
+      #{item.orderName,jdbcType=VARCHAR}, #{item.productId,jdbcType=VARCHAR}, #{item.buyQuantity,jdbcType=INTEGER}
+      )</foreach>
+  </insert>
+  */
         XmlElement answer = new XmlElement("insert");
 
         answer.addAttribute(new Attribute("id", BATCH_INSERT));

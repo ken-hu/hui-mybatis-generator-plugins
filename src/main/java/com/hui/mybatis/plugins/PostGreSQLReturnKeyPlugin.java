@@ -19,6 +19,7 @@ import java.util.List;
  */
 public class PostGreSQLReturnKeyPlugin extends PluginAdapter {
 
+    @Override
     public boolean validate(List<String> list) {
         return true;
     }
