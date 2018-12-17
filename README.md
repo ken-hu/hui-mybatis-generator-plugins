@@ -46,7 +46,7 @@ com.hui.mybatis.plugins.PostgreBatchUpdatePlugin
 ## 返回PG主键
 com.hui.mybatis.plugins.PostGreSQLReturnKeyPlugin
 
-##重新生成的时候 覆盖原文件
+## 重新生成的时候 覆盖原文件
 com.hui.mybatis.plugins.OverWriteXmlPlugin
 
 
