@@ -126,11 +126,11 @@ public class MethodGeneratorTool {
      */
     public static void defaultBatchDeleteMethodGen(Interface interfaze,IntrospectedTable introspectedTable, Context context){
         Set<FullyQualifiedJavaType> importedTypes = MethodGeneratorTool.importedBaseTypesGenerator(introspectedTable);
-
+        FullyQualifiedJavaType paramType = introspectedTable.getPrimaryKeyColumns().get(0).getFullyQualifiedJavaType();
         Method batchDeleteMethod = MethodGeneratorTool.methodGenerator(BATCH_DELETE,
                 JavaVisibility.DEFAULT,
                 FullyQualifiedJavaType.getIntInstance(),
-                new Parameter(new FullyQualifiedJavaType("Integer[]"), DELETE_PARAMETER_NAME, "@Param(\""+DELETE_PARAMETER_NAME+"\")"));
+                new Parameter(new FullyQualifiedJavaType(paramType.getFullyQualifiedName()+"[]"), DELETE_PARAMETER_NAME, "@Param(\""+DELETE_PARAMETER_NAME+"\")"));
 
         context.getCommentGenerator().addGeneralMethodComment(batchDeleteMethod,introspectedTable);
         interfaze.addImportedTypes(importedTypes);

@@ -65,7 +65,9 @@ public class BatchDeletePlugin extends PluginAdapter {
 
         String baseSql = String.format("delete from %s where %s in (",tableName,key);
 
-        XmlElement deleteElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.DELETE, BATCH_DELETE, FullyQualifiedJavaType.getIntInstance());
+        FullyQualifiedJavaType paramType = introspectedTable.getPrimaryKeyColumns().get(0).getFullyQualifiedJavaType();
+
+        XmlElement deleteElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.DELETE, BATCH_DELETE,paramType);
 
         XmlElement foreachElement = SqlMapperGeneratorTool.baseForeachElementGenerator(PARAMETER_NAME,"item","index",null);
 

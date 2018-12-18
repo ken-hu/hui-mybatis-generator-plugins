@@ -50,6 +50,7 @@ public class SqlMapperGeneratorTool {
      */
     public static XmlElement baseElementGenerator(String sqlElementType, String sqlMapperId,FullyQualifiedJavaType parameterType){
 
+
         XmlElement baseElement = new XmlElement(sqlElementType);
 
         baseElement.addAttribute(new Attribute("id", sqlMapperId));

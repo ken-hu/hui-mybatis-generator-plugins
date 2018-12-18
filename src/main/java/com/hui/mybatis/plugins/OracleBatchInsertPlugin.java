@@ -91,7 +91,7 @@ public class OracleBatchInsertPlugin extends PluginAdapter {
             baseElement.addElement(new TextElement(columnInfo));
             foreachElement.addElement(new TextElement(valueInfo));
         }
-        foreachElement.addElement(new TextElement("from dual"));
+        foreachElement.addElement(new TextElement(")from dual"));
 
         baseElement.addElement(new TextElement(")"));
         baseElement.addElement(new TextElement("values"));
