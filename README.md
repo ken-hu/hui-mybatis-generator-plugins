@@ -5,7 +5,7 @@
 1. 在id上指定database
 2. targetRuntime指定Mybatis3
 3. 引入插件
-4. 指定table的主键（这里主要是为了分布式系统用的主键是非数据库自动生成的。主键指定一下）
+4. 通过这个控制执行insert的时候是否有id的存在。 加了 <generatedKey column="order_id"/>，则是通过数据库生成主键。不加则是自己插入主键（适用于分布式系统）
 ```xml
     <context id="Mysql" targetRuntime="MyBatis3" defaultModelType="flat">
 ```
@@ -46,7 +46,7 @@ com.hui.mybatis.plugins.PostgreBatchUpdatePlugin
 ## 返回PG主键
 com.hui.mybatis.plugins.PostGreSQLReturnKeyPlugin
 
-##重新生成的时候 覆盖原文件
+## 重新生成的时候 覆盖原文件
 com.hui.mybatis.plugins.OverWriteXmlPlugin
 
 
