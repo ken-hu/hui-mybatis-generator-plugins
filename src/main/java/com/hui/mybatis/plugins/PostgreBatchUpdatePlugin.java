@@ -83,18 +83,24 @@ public class PostgreBatchUpdatePlugin extends PluginAdapter {
         for (int i = 0; i < columnList.size(); i++) {
 
             IntrospectedColumn introspectedColumn = columnList.get(i);
-                if (introspectedColumn.isIdentity() || i==0) {
-                    continue;
-                }
+
             columnInfo.append(introspectedColumn.getActualColumnName());
             columnInfoTotal.append(introspectedColumn.getActualColumnName());
-            valuesInfo.append(MyBatis3FormattingUtilities.getParameterClause(introspectedColumn, "item."));
+            if (introspectedColumn.getFullyQualifiedJavaType().equals(FullyQualifiedJavaType.getDateInstance())){
+                valuesInfo.append("to_timestamp(");
+                valuesInfo.append(MyBatis3FormattingUtilities.getParameterClause(introspectedColumn, "item."));
+                valuesInfo.append(",'yyyy-MM-dd hh24:mi:ss')");
+            }else {
+                valuesInfo.append(MyBatis3FormattingUtilities.getParameterClause(introspectedColumn, "item."));
+            }
 
             String setSql = String.format(" %s = %s," ,columnInfo,"temp."+columnInfo);
             if (i == (columnList.size() - 1)) {
                 setSql = setSql.substring(0, setSql.length() - 1);
             }
-            setElement.addElement(new TextElement(setSql));
+            if (!introspectedColumn.isIdentity() && !introspectedColumn.getActualColumnName().equals(primaryKeyName)) {
+                setElement.addElement(new TextElement(setSql));
+            }
 
             if (i != (columnList.size() - 1)) {
                 valuesInfo.append(",");
@@ -105,7 +111,11 @@ public class PostgreBatchUpdatePlugin extends PluginAdapter {
             columnInfo.delete(0, valuesInfo.length());
         }
 
+        foreachElement.addElement(new TextElement("("));
+
         foreachElement.addElement(new TextElement(valuesInfo.toString()));
+
+        foreachElement.addElement(new TextElement(")"));
 
         updateElement.addElement(setElement);
 
@@ -113,7 +123,7 @@ public class PostgreBatchUpdatePlugin extends PluginAdapter {
 
         updateElement.addElement(foreachElement);
 
-        updateElement.addElement(new TextElement(String.format(") as temp (%s) where %s.%s=temp.%s;",columnInfoTotal,tableName,primaryKeyName,primaryKeyJavaName)));
+        updateElement.addElement(new TextElement(String.format(") as temp (%s) where %s.%s=temp.%s;",columnInfoTotal,tableName,primaryKeyName,primaryKeyName)));
 
         //3.parent Add
         document.getRootElement().addElement(updateElement);

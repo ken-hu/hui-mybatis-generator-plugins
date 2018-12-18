@@ -23,6 +23,8 @@ public class MethodGeneratorTool {
 
     private final static String PARAMETER_NAME = "recordList";
 
+    private final static String DELETE_PARAMETER_NAME = "ids";
+
     private final static String BATCH_UPDATE = "batchUpdate";
 
     private final static String BATCH_DELETE = "batchDelete";
@@ -128,7 +130,7 @@ public class MethodGeneratorTool {
         Method batchDeleteMethod = MethodGeneratorTool.methodGenerator(BATCH_DELETE,
                 JavaVisibility.DEFAULT,
                 FullyQualifiedJavaType.getIntInstance(),
-                new Parameter(new FullyQualifiedJavaType("Integer[]"), PARAMETER_NAME, "@Param(\""+PARAMETER_NAME+"\")"));
+                new Parameter(new FullyQualifiedJavaType("Integer[]"), DELETE_PARAMETER_NAME, "@Param(\""+DELETE_PARAMETER_NAME+"\")"));
 
         context.getCommentGenerator().addGeneralMethodComment(batchDeleteMethod,introspectedTable);
         interfaze.addImportedTypes(importedTypes);

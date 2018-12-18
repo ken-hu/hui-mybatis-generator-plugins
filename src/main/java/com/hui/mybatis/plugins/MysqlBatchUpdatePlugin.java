@@ -58,8 +58,14 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
         List<IntrospectedColumn> columnList = introspectedTable.getAllColumns();
         //primaryKey的JDBC名字
         String primaryKeyName = introspectedTable.getPrimaryKeyColumns().get(0).getActualColumnName();
+
+        //primaryKey的JAVA变量
+        String primaryKeyParameterClause = MyBatis3FormattingUtilities.getParameterClause(introspectedTable.getPrimaryKeyColumns().get(0), "item.");
+
         //primaryKey的JAVA名字
         String primaryKeyJavaName = introspectedTable.getPrimaryKeyColumns().get(0).getJavaProperty();
+
+
 
         XmlElement updateXmlElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.UPDATE,
                 BATCH_UPDATE,
@@ -84,10 +90,10 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
                 continue;
             }
 
-            String ifSql = String.format("when %s then %s", primaryKeyJavaName, parameterClause);
+            String ifSql = String.format("when %s then %s", primaryKeyParameterClause, parameterClause);
             XmlElement ifElement = SqlMapperGeneratorTool.baseIfJudgeElementGen(columnJavaTypeName, ifSql, false);
 
-            String ifNullSql = String.format("when %s then %s", primaryKeyJavaName, tableName + "." + columnName);
+            String ifNullSql = String.format("when %s then %s", primaryKeyParameterClause, tableName + "." + columnName);
             XmlElement ifNullElement = SqlMapperGeneratorTool.baseIfJudgeElementGen(columnJavaTypeName, ifNullSql, true);
 
 
@@ -107,7 +113,7 @@ public class MysqlBatchUpdatePlugin extends PluginAdapter {
                 "item",
                 "index",
                 ",");
-        foreachElement.addElement(new TextElement(primaryKeyJavaName));
+        foreachElement.addElement(new TextElement(primaryKeyParameterClause));
 
         updateXmlElement.addElement(new TextElement( String.format("where %s in(", primaryKeyName)));
 
