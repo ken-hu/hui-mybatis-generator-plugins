@@ -64,12 +64,12 @@ public class OracleBatchInsertPlugin extends PluginAdapter {
                 "index",
                 "union all");
 
-        foreachElement.addElement(new TextElement("select"));
 
         //tableName
         baseElement.addElement(new TextElement(String.format("insert into %s (", introspectedTable.getFullyQualifiedTableNameAtRuntime())));
 
         foreachElement.addElement(new TextElement("("));
+        foreachElement.addElement(new TextElement("select"));
 
         for (int i = 0; i < introspectedTable.getAllColumns().size(); i++) {
             //column信息
@@ -78,12 +78,12 @@ public class OracleBatchInsertPlugin extends PluginAdapter {
             String columnInfo = "";
             String valueInfo = "";
 
-            if (introspectedColumn.isIdentity()) {
-                continue;
-            }
             columnInfo = introspectedColumn.getActualColumnName();
             valueInfo = MyBatis3FormattingUtilities.getParameterClause(introspectedColumn, "item.");
-
+            if (introspectedColumn.isIdentity()) {
+                String nextval = introspectedTable.getFullyQualifiedTableNameAtRuntime()+"_SEQUENCE.nextval" ;
+                valueInfo = nextval;
+            }
             if (i != (introspectedTable.getAllColumns().size() - 1)) {
                 columnInfo += (",");
                 valueInfo += ",";
@@ -91,12 +91,15 @@ public class OracleBatchInsertPlugin extends PluginAdapter {
             baseElement.addElement(new TextElement(columnInfo));
             foreachElement.addElement(new TextElement(valueInfo));
         }
-        foreachElement.addElement(new TextElement(")from dual"));
+        foreachElement.addElement(new TextElement("from dual"));
+        foreachElement.addElement(new TextElement(")"));
+
 
         baseElement.addElement(new TextElement(")"));
-        baseElement.addElement(new TextElement("values"));
 
+        baseElement.addElement(new TextElement("("));
         baseElement.addElement(foreachElement);
+        baseElement.addElement(new TextElement(")"));
 
         //3.parent Add
         document.getRootElement().addElement(baseElement);

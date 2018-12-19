@@ -60,14 +60,17 @@ public class PostGreSQLReturnKeyPlugin extends PluginAdapter {
      * @return
      */
     private XmlElement addSelectKey(IntrospectedTable introspectedTable){
+        String resultType = introspectedTable.getPrimaryKeyColumns().get(0).getFullyQualifiedJavaType().getFullyQualifiedName();
+        String keyProperty = introspectedTable.getPrimaryKeyColumns().get(0).getActualColumnName();
+
         String tableName = introspectedTable.getFullyQualifiedTableNameAtRuntime();
         String sql = "SELECT currval('" + tableName + "_id_seq')";
 
         XmlElement selectKey = new XmlElement("selectKey");
         TextElement selectKeySQL = new TextElement(sql);
-        selectKey.addAttribute(new Attribute("keyProperty","id"));
+        selectKey.addAttribute(new Attribute("keyProperty",keyProperty));
         selectKey.addAttribute(new Attribute("order","AFTER"));
-        selectKey.addAttribute(new Attribute("resultType", "java.lang.Integer"));
+        selectKey.addAttribute(new Attribute("resultType", resultType));
         selectKey.addElement(selectKeySQL);
         return selectKey;
     }

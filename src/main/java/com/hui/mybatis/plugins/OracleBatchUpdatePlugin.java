@@ -60,6 +60,7 @@ public class OracleBatchUpdatePlugin extends PluginAdapter {
         //primaryKey的JAVA名字
         String primaryKeyJavaName = introspectedTable.getPrimaryKeyColumns().get(0).getJavaProperty();
 
+        String keyParameterClause = MyBatis3FormattingUtilities.getParameterClause(introspectedTable.getPrimaryKeyColumns().get(0), "item.");
         XmlElement baseElement = SqlMapperGeneratorTool.baseElementGenerator(SqlMapperGeneratorTool.UPDATE,
                 BATCH_UPDATE,
                 FullyQualifiedJavaType.getNewListInstance());
@@ -92,13 +93,13 @@ public class OracleBatchUpdatePlugin extends PluginAdapter {
             setElement.addElement(new TextElement(setSql));
 
             valuesInfo.delete(0, valuesInfo.length());
-            columnInfo.delete(0, valuesInfo.length());
+            columnInfo.delete(0, columnInfo.length());
 
         }
 
         foreachElement.addElement(setElement);
 
-        String whereSql = String.format("where %s = %s",primaryKeyName,primaryKeyJavaName);
+        String whereSql = String.format("where %s = %s",primaryKeyName,keyParameterClause);
 
         foreachElement.addElement(new TextElement(whereSql));
 
