@@ -1,5 +1,5 @@
 # hui-mybatis-plugins
-【Mybatis-Plugin】Mybatis的插件开发。根据个人需要
+【Mybatis-Plugin】Mybatis-Generator插件开发。根据个人需要
 ## 使用方法
 需要新增批量操作的时候。有一个简易版插件。
 1. 在id上指定database
