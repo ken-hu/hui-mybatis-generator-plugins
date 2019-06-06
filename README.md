@@ -1,5 +1,11 @@
 # hui-mybatis-plugins
 【Mybatis-Plugin】Mybatis-Generator插件开发。根据个人需要
+
+# 項目迁移
+2019-06-05 项目全部迁移到码云gitee
+github不维护
+项目地址： https://gitee.com/huhui_/hui-mybatis-plugins  
+
 ## 使用方法
 需要新增批量操作的时候。有一个简易版插件。
 1. 在id上指定database
