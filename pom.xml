@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.hui.mybatis.plugins</groupId>
-    <artifactId>hui-mybatis-plugins</artifactId>
+    <artifactId>hui-mybatis-generator-plugins</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
