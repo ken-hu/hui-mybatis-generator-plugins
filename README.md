@@ -2,8 +2,8 @@
 【Mybatis-Plugin】Mybatis-Generator插件开发。根据个人需要
 
 # 項目迁移
-2019-06-05 项目全部迁移到码云gitee
-github不维护
+2019-06-05 项目全部迁移到码云gitee  
+github不维护  
 项目地址： https://gitee.com/huhui_/hui-mybatis-plugins  
 
 ## 使用方法
