@@ -1,6 +1,17 @@
 # hui-mybatis-plugins
 【Mybatis-Plugin】Mybatis-Generator插件开发。根据个人需要
 
+## blog
+1. [mybatis-generator-plugins-javaBean/xmlMethod生成工具](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-javaBean-xmlMethod-tool/)
+2. [mybatis-generator-plugins-postgresql-批量更新](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-postgresql-batch-update/)
+3. [mybatis-generator-plugins-oracle-批量更新](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-oracle-batch-update/)
+4. [mybatis-generator-plugins-mysql批量更新](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-mysql-batch-update/)
+5. [mybatis-generator-plugins-postgresql-返回主键](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-postgresql-return-key/)
+6. [mybatis-generator-plugins-oracle-返回主键](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-oracle-return-key/)
+7. [mybatis-generator-plugins-oracle-批量插入](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-oracle-batch-insert/)
+8. [mybatis-generator-plugins-mysql/postgresql-批量插入](https://ithuhui.com/2018/12/21/mybatis-generator-plugins-mysql-postgresql-batch-insert/)
+9. [mybatis-generator-plugin-批量删除](https://ithuhui.com/2018/12/21/mybatis-generator-batch-delete/)
+
 ## 使用说明
 需要新增批量操作的时候。有一个简易版插件。
 1. 在id上指定database
